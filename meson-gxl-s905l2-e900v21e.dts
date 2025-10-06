@@ -4,8 +4,8 @@
 	interrupt-parent = <0x01>;
 	#address-cells = <0x02>;
 	#size-cells = <0x02>;
-	compatible = "amlogic,s905l2\0amlogic,meson-gxl";
-	model = "Skyworth E900V21E";
+	compatible = "amlogic,e900v21-series\0amlogic,meson-gxl";
+	model = "Skyworth E900V21 SERIES";
 
 	aliases {
 		mmc0 = "/soc/apb@d0000000/mmc@70000";
@@ -71,12 +71,8 @@
 			compatible = "amlogic,simple-framebuffer\0simple-framebuffer";
 			amlogic,pipeline = "vpu-hdmi";
 			power-domains = <0x02 0x00>;
-			status = "okay";
+			status = "disabled";
 			clocks = <0x03 0x3f 0x03 0x0c 0x03 0x4d>;
-                        width = <1280>;
-                        height = <720>;
-                        stride = <(1280 * 4)>;
-                        format = "a8r8g8b8"; 
 			phandle = <0x45>;
 		};
 	};
@@ -1393,7 +1389,7 @@
 				sd-uhs-sdr25;
 				sd-uhs-sdr50;
 				sd-uhs-sdr104;
-				max-frequency = <0x5f5e100>;
+				max-frequency = <0x2faf080>;
 				non-removable;
 				disable-wp;
 				keep-power-in-suspend;
@@ -1475,7 +1471,6 @@
 			gpu@d00c0000 {
 				compatible = "amlogic,meson-gxl-mali\0arm,mali-450";
 				reg = <0x00 0xd00c0000 0x00 0x40000>;
-                                num_of_pp = <0x02>; 
 				interrupts = <0x00 0xa0 0x04 0x00 0xa1 0x04 0x00 0xa2 0x04 0x00 0xa3 0x04 0x00 0xa4 0x04 0x00 0xa5 0x04 0x00 0xa6 0x04 0x00 0xa7 0x04>;
 				interrupt-names = "gp\0gpmmu\0pp\0pmu\0pp0\0ppmmu0\0pp1\0ppmmu1";
 				operating-points-v2 = <0x2e>;
@@ -1487,34 +1482,37 @@
 			};
 		};
 
-                vpu@c8830000 {
-                       compatible = "amlogic,meson-gxl-vpu\0amlogic,meson-gx-vpu"; // 保留双重兼容，无需修改
-                       reg = <0x00 0xc8830000 0x00 0x10000 0x00 0xc8834000 0x00 0x1000>; // 原厂寄存器地址，无需修改
-                       reg-names = "vpu\0hhi";
-                       interrupts = <0x01 0x40 0x04>; 
-                       #address-cells = <0x01>;
-                       #size-cells = <0x00>;
-                       amlogic,canvas = <0x1d>;
-                       power-domains = <0x03 0x05>; 
-                       phandle = <0x9f>;
-                       port@0 {
-                               reg = <0x00>;
-                               phandle = <0xa0>;
-                               endpoint {
-                                         remote-endpoint = <0x2f>;
-                                         phandle = <0x3a>;
-                               };
-                      };
+		vpu@d0100000 {
+			compatible = "amlogic,meson-gxl-vpu\0amlogic,meson-gx-vpu";
+			reg = <0x00 0xd0100000 0x00 0x100000 0x00 0xc883c000 0x00 0x1000>;
+			reg-names = "vpu\0hhi";
+			interrupts = <0x00 0x03 0x01>;
+			#address-cells = <0x01>;
+			#size-cells = <0x00>;
+			amlogic,canvas = <0x1d>;
+			power-domains = <0x02 0x00>;
+			phandle = <0x9f>;
 
-                      port@1 {
-                              reg = <0x01>;        
-                              phandle = <0xa1>;
-                              endpoint {
-                              remote-endpoint = <0x30>;
-                              phandle = <0x34>;
-                              };
-                     };
-                };
+			port@0 {
+				reg = <0x00>;
+				phandle = <0xa0>;
+
+				endpoint {
+					remote-endpoint = <0x2f>;
+					phandle = <0x3a>;
+				};
+			};
+
+			port@1 {
+				reg = <0x01>;
+				phandle = <0xa1>;
+
+				endpoint {
+					remote-endpoint = <0x30>;
+					phandle = <0x34>;
+				};
+			};
+		};
 
 		hdmi-tx@c883a000 {
 			compatible = "amlogic,meson-gxl-dw-hdmi\0amlogic,meson-gx-dw-hdmi";
@@ -1829,6 +1827,30 @@
 		};
 	};
 
+	leds {
+		compatible = "gpio-leds";
+
+		power_led {
+			led_name = "power_led";
+			gpios = <0x28 0x49 0x00>;
+			default-state = "on";
+		};
+
+		net_led {
+			led_name = "net_led";
+			gpios = <0x64 0x05 0x00>;
+			default-state = "off";
+			linux,default-trigger = "0.0:00:link";
+		};
+
+		print_status {
+			led_name = "print_status";
+			gpios = <0x64 0x06 0x00>;
+			default-state = "off";
+			linux,default-trigger = "rc-feedback";
+		};
+	};
+
 	__symbols__ {
 		hwrom_reserved = "/reserved-memory/hwrom@0";
 		secmon_reserved = "/reserved-memory/secmon@10000000";
@@ -1969,11 +1991,11 @@
 		usb2_phy0 = "/soc/apb@d0000000/phy@78000";
 		usb2_phy1 = "/soc/apb@d0000000/phy@78020";
 		mali = "/soc/apb@d0000000/gpu@d00c0000";
-		vpu = "/soc/vpu@c8830000";
-		cvbs_vdac_port = "/soc/vpu@c8830000/port@0";
-		cvbs_vdac_out = "/soc/vpu@c8830000/port@0/endpoint";
-		hdmi_tx_port = "/soc/vpu@c8830000/port@1";
-		hdmi_tx_out = "/soc/vpu@c8830000/port@1/endpoint";
+		vpu = "/soc/vpu@d0100000";
+		cvbs_vdac_port = "/soc/vpu@d0100000/port@0";
+		cvbs_vdac_out = "/soc/vpu@d0100000/port@0/endpoint";
+		hdmi_tx_port = "/soc/vpu@d0100000/port@1";
+		hdmi_tx_out = "/soc/vpu@d0100000/port@1/endpoint";
 		hdmi_tx = "/soc/hdmi-tx@c883a000";
 		hdmi_tx_venc_port = "/soc/hdmi-tx@c883a000/port@0";
 		hdmi_tx_in = "/soc/hdmi-tx@c883a000/port@0/endpoint";
